@@ -1,0 +1,27 @@
+#!/bin/vbash
+source /opt/vyatta/etc/functions/script-template
+
+LOAD_CONFIG="/opt/vyatta/sbin/vyatta-load-config.pl"
+USER_DATA_DIR="/var/lib/vyos-cloudinit"
+USER_DATA="${USER_DATA_DIR}/user-data"
+
+header=$(head -n1 ${USER_DATA})
+
+if [ "${header}" = "#vyos-config" ]; then
+    tmpfile=$(mktemp /tmp/XXXXXX-cloud-init)
+    output=$(mktemp /tmp/XXXXXX-cloud-init-out)
+    tail -n +2 ${USER_DATA} > ${tmpfile}
+    echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpfile} --merge > ${output}
+    result=$(cat ${output} | tail -n +5 | head -n -1)
+    grep -q fail ${output}
+    code=$?
+    if [ "${code}" = "0" ]; then
+        echo "merge failed"
+        echo "${result}"
+    fi
+elif [ "${header}" = "#!/bin/vbash" ]; then
+    chmod +x ${USER_DATA}
+    ${USER_DATA}
+fi
+
+rm -f $tmpfile $output
