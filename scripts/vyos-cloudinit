@@ -1,27 +1,49 @@
 #!/bin/vbash
-source /opt/vyatta/etc/functions/script-template
 
-LOAD_CONFIG="/opt/vyatta/sbin/vyatta-load-config.pl"
-USER_DATA_DIR="/var/lib/vyos-cloudinit"
-USER_DATA="${USER_DATA_DIR}/user-data"
+: ${vyatta_env:=/etc/default/vyatta}
+source $vyatta_env
+
+LOAD_CONFIG="${vyatta_sbindir}/vyatta-load-config.pl"
+
+if [ $# -ne 1 ]; then
+    echo "user-data path is required."
+    exit 1
+fi
+USER_DATA="$1"
+
+_exit=exit
+source ${vyatta_sysconfdir}/functions/script-template
 
 header=$(head -n1 ${USER_DATA})
 
 if [ "${header}" = "#vyos-config" ]; then
-    tmpfile=$(mktemp /tmp/XXXXXX-cloud-init)
-    output=$(mktemp /tmp/XXXXXX-cloud-init-out)
+    tmpfile=$(mktemp /tmp/XXXXXX-user-data)
+    output=$(mktemp /tmp/XXXXXX-output)
     tail -n +2 ${USER_DATA} > ${tmpfile}
     echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpfile} --merge > ${output}
     result=$(cat ${output} | tail -n +5 | head -n -1)
     grep -q fail ${output}
     code=$?
-    if [ "${code}" = "0" ]; then
+    if [ ${code} -eq 0 ]; then
         echo "merge failed"
         echo "${result}"
+        code=1
+    else
+        commit
+        save
+        code=0
     fi
 elif [ "${header}" = "#!/bin/vbash" ]; then
     chmod +x ${USER_DATA}
-    ${USER_DATA}
+    result=$(${USER_DATA})
+    code=$?
+    if [ ${code} -ne 0 ]; then
+        echo "user script failed"
+        echo "${result}"
+    fi
 fi
 
-rm -f $tmpfile $output
+if [ ${code} -eq 0 ]; then
+    rm -f $tmpfile $output
+fi
+$_exit $code

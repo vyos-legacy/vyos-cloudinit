@@ -1,0 +1,23 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          vyos-cloudinit
+# Required-Start:    vyatta-router
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Merge user VyOS config or run user script.
+# Description:       Merge user VyOS config or run user script.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+: ${vyatta_env:=/etc/default/vyatta}
+source $vyatta_env
+
+USER_DATA="/var/lib/vyos-cloudinit/user-data"
+
+if [ -f ${USER_DATA} ]; then
+    log_action_begin_msg "Starting vyos-cloudinit"
+    ${vyatta_sbindir}/vyos-cloudinit /var/lib/vyos-cloudinit/user-data
+    log_action_end_msg $?
+fi

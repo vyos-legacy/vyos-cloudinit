@@ -1,0 +1,4 @@
+#vyos-config
+system {
+    host-name hoge
+}
