@@ -1,0 +1,16 @@
+Source: vyos-cloudinit
+Section: admin
+Priority: extra
+Maintainer: VyOS Maintainers <maintainers@vyos.net>
+Standards-Version: 3.9.1
+Build-Depends: debhelper (>= 5), autotools-dev, autoconf
+
+Package: vyos-cloudinit
+Architecture: all
+Depends: vyatta-cfg-system,
+ vyatta-cfg,
+ vyatta-op,
+ ${misc:Depends}
+Replaces: vyos-cloudinit
+Description: vyos-cloudinit
+ vyos-cloudinit enables a user to customize VyOS machines by providing either a VyOS config document or an executable script through user-data.

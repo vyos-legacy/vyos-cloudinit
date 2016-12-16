@@ -1,0 +1,6 @@
+The Debian Package vyos-cloudinit
+---------------------------------
+
+This package is a VyOS cloudinit.
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Thu, 15 Dec 2016 15:11:43 +0900

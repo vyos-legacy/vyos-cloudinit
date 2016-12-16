@@ -1,0 +1,2 @@
+vyos-cloudinit: file-in-unusual-dir
+vyos-cloudinit: dir-or-file-in-opt

@@ -1,0 +1,3 @@
+vyos-cloudinit enables a user to customize VyOS machines by providing either a vyos-config document or an executable script through user-data.
+
+See README.md for details.
