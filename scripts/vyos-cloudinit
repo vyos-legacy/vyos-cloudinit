@@ -1,41 +1,35 @@
 #!/bin/vbash
 
-usage() {
-    cat <<EOF
-Usage: $0 [options...]
-  -s ssh key path
-  -u ssh user
-  -d user data path
-  -h show this message
-EOF
-    exit 1
-}
-
-SSH_KEY=""
-SSH_USER="vyos"
-USER_DATA=""
-while getopts e:s:u:d:h: OPT
-do
-  case $OPT in
-    s)  SSH_KEY=$OPTARG;;
-    u)  SSH_USER=$OPTARG;;
-    d)  USER_DATA=$OPTARG;;
-    h)  usage;;
-    \?) usage;;
-  esac
-done
-
-if [[ -z "${SSH_KEY}" && -z "${USER_DATA}" ]]; then
-  usage
-fi
-
 : ${vyatta_env:=/etc/default/vyatta}
 source $vyatta_env
 
+ENVIRONMENT=""
+SSH_KEY=""
+SSH_USER="vyos"
+USER_DATA=""
+
+CONF_DIR="${vyatta_sysconfdir}/vyos-cloudinit"
+. ${CONF_DIR}/vyos-cloudinit.conf
+
+if [ -n "${ENVIRONMENT}" ]; then
+  env_conf=${CONF_DIR}/${ENVIRONMENT}.conf
+  if [ -f ${env_conf} ]; then
+    . ${env_conf}
+  else
+    echo "${ENVIRONMENT} is not supported"
+  fi
+fi
+
+# override with user specified parameters
+. ${CONF_DIR}/vyos-cloudinit.conf
+
+if [[ -z "${SSH_KEY}" && -z "${USER_DATA}" ]]; then
+  echo "both ssh-key and user-data are not specified"
+  exit 0
+fi
+
 LOAD_KEY="${vyatta_sbindir}/vyatta-load-user-key.pl"
 LOAD_CONFIG="${vyatta_sbindir}/vyatta-load-config.pl"
-
-code=0
 
 _exit=exit
 source ${vyatta_sysconfdir}/functions/script-template
@@ -43,71 +37,71 @@ source ${vyatta_sysconfdir}/functions/script-template
 function load_key() {
   echo "loading ssh key..."
   ${LOAD_KEY} ${SSH_USER} ${SSH_KEY}
-  code=$?
 }
 
+ssh_key_code=0
 if [[ -n "${SSH_KEY}" && "${SSH_KEY}" == "http"* ]]; then
   /usr/bin/curl -m 3 -sf "${SSH_KEY}"
   if [ $? -ne 0 ]; then
     echo "could not retrieve ssh key from ${SSH_KEY}"
-    code=1
+    ssh_key_code=1
   else
     load_key
+    ssh_key_code=$?
   fi
 elif [[ -n "${SSH_KEY}" ]]; then
   load_key
+  ssh_key_code=$?
 fi
 
 if [[ -z "${USER_DATA}" ]]; then
-  $_exit $code
+  $_exit ${ssh_key_code}
 fi
 
-tmpfiles=""
+user_data_code=0
 if [[ "${USER_DATA}" == "http"* ]]; then
-  tmp=$(mktemp /tmp/XXXXXX-user-data)
-  tmpfiles=$tmp
-  /usr/bin/curl -m 3 -sf "${USER_DATA}" -o ${tmp}
+  tmpdata=$(mktemp /tmp/XXXXXX-user-data)
+  /usr/bin/curl -m 3 -sf "${USER_DATA}" -o ${tmpdata}
   if [ $? -ne 0 ]; then
     echo "could not retrieve user-data from ${USER_DATA}"
-    code=1
+    user_data_code=1
   fi
-  USER_DATA="${tmp}"
+  USER_DATA="${tmpdata}"
 fi
 
 header=$(head -n1 ${USER_DATA})
 
 if [[ "${header}" == "#vyos-config" ]]; then
   echo "merging VyOS config..."
-  tmp=$(mktemp /tmp/XXXXXX-config)
-  tmpfiles="${tmpfiles} ${tmp}"
+  tmpconf=$(mktemp /tmp/XXXXXX-config)
   output=$(mktemp /tmp/XXXXXX-output)
-  tail -n +2 ${USER_DATA} > ${tmp}
-  echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpfile} --merge > ${output}
+  tail -n +2 ${USER_DATA} > ${tmpconf}
+  echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpconf} --merge > ${output}
   result=$(cat ${output} | tail -n +5 | head -n -1)
   grep -q fail ${output}
-  code=$?
-  if [ ${code} -eq 0 ]; then
+  user_data_code=$?
+  if [ ${user_data_code} -eq 0 ]; then
     echo "merge failed"
     echo "${result}"
-    code=1
+    user_data_code=1
   else
     commit
     save
-    code=0
+    user_data_code=0
   fi
 elif [[ "${header}" == "#!/bin/vbash" ]]; then
   echo "running user script..."
   chmod +x ${USER_DATA}
   result=$(${USER_DATA})
-  code=$?
-  if [[ ${code} -ne 0 ]]; then
+  user_data_code=$?
+  if [[ ${user_data_code} -ne 0 ]]; then
     echo "user script failed"
     echo "${result}"
   fi
 fi
 
-if [[ ${code} -eq 0 ]]; then
-  rm -f $tmpfiles $output
+if [[ ${user_data_code} -eq 0 ]]; then
+  rm -f ${tmpdata} ${tmpconf} ${output}
 fi
 
 $_exit $code
