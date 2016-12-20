@@ -1,0 +1,8 @@
+type: txt
+help: Environment
+syntax:expression: exec "[ -f /opt/vyatta/etc/vyos-cloudinit/$VAR(@).conf ]"
+                   ; "$VAR(@) is not supported"
+allowed: sudo ls -1 /opt/vyatta/etc/vyos-cloudinit/ | sed 's/.conf//' | grep -v vyos-cloudinit
+create: sudo sh -c "echo ENVIRONMENT=$VAR(@) >> /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+update: sudo sh -c "sed -i '/^ENVIRONMENT=/c/ENVIRONMENT=$VAR(@)/' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+delete: sudo sh -c "sed -i '/ENVIRONMENT=/d' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"

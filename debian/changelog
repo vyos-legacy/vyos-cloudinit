@@ -1,3 +1,10 @@
+vyos-cloudinit (0.1.0) unstable; urgency=low
+
+  * Add command templates.
+  * Initial support for EC2.
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Tue, 20 Dec 2016 12:41:22 +0900
+
 vyos-cloudinit (0.0.1) unstable; urgency=low
 
   * Initial release.

@@ -2,7 +2,23 @@
 
 vyos-cloudinit enables a user to customize VyOS machines by providing either a VyOS config document or an executable script through user-data.
 
-## Configuration with vyos-config
+## Configuration
+
+```
+set service cloudinit environment ec2
+```
+
+or
+
+```
+set service cloudinit ssh-user <user name>
+set service cloudinit ssh-key <ssh key url>
+set service cloudinit user-data <user data url>
+```
+
+## User data
+
+### Configuration with vyos-config
 
 vyos-cloudinit doesn't support cloud-init spec, but supports VyOS config spec.
 
@@ -15,7 +31,7 @@ system {
 }
 ```
 
-## Executing a Script
+### Executing a Script
 
 vyos-cloudinit supports executing user-data as a script instead of parsing it as a VyOS config document.
 

@@ -1,0 +1,11 @@
+type: txt
+help: SSH user
+
+syntax:expression: exec "cli-shell-api exists system login user $VAR(@)"
+                   ; "$VAR(@) does not exist"
+allowed: list=`cli-shell-api listNodes system login user`
+  echo $list
+
+create: sudo sh -c "echo SSH_USER=$VAR(@) >> /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+update: sudo sh -c "sed -i '/^SSH_USER=/c/SSH_USER=$VAR(@)/' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+delete: sudo sh -c "sed -i '/SSH_USER=/d' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"

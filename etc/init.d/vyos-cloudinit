@@ -1,0 +1,53 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          vyos-cloudinit
+# Required-Start:    vyatta-router
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Merge user VyOS config or run user script.
+# Description:       Merge user VyOS config or run user script.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+: ${vyatta_env:=/etc/default/vyatta}
+source $vyatta_env
+
+ENVIRONMENT=""
+SSH_USER="vyos"
+SSH_KEY=""
+USER_DATA=""
+
+conf_dir="${vyatta_sysconfdir}/vyos-cloudinit"
+
+. ${conf_dir}/vyos-cloudinit.conf
+
+log_action_begin_msg "Starting vyos-cloudinit"
+if [ -n "${ENVIRONMENT}" ]; then
+  env_conf=${conf_dir}/${ENVIRONMENT}.conf
+  if [ -f ${env_conf} ]; then
+    . ${env_conf}
+  else
+    echo "${ENVIRONMENT} is not supported"
+  fi
+fi
+
+# override with user specified parameters
+. ${conf_dir}/vyos-cloudinit.conf
+
+code=0
+if [[ -z "${SSH_KEY}" && -z "${USER_DATA}" ]]; then
+  log_action_msg "both ssh-key and user-data are not specified"
+elif [[ -n "${SSH_KEY}" && -z "${USER_DATA}" ]]; then
+  ${vyatta_sbindir}/vyos-cloudinit -u "${SSH_USER}" -s "${SSH_KEY}"
+  code=$?
+elif [[ -z "${SSH_KEY}" && -n "${USER_DATA}" ]]; then
+  ${vyatta_sbindir}/vyos-cloudinit -u "${SSH_USER}" -d "${USER_DATA}"
+  code=$?
+elif [[ -n "${SSH_KEY}" && -n "${USER_DATA}" ]]; then
+  ${vyatta_sbindir}/vyos-cloudinit -u "${SSH_USER}" -s "${SSH_KEY}" -d "${USER_DATA}"
+  code=$?
+fi
+
+log_action_end_msg $code

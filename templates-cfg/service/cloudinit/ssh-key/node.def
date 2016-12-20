@@ -1,0 +1,6 @@
+type: txt
+help: SSH key URL
+syntax:expression: pattern $VAR(@) "^[^!]+$" ; "SSH key URL must not be null and must not contain '!'"
+create: sudo sh -c "echo SSH_KEY=$VAR(@) >> /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+update: sudo sh -c "sed -i '/^SSH_KEY=/c/SSH_KEY=$VAR(@)/' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+delete: sudo sh -c "sed -i '/SSH_KEY=/d' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"

@@ -1,0 +1,17 @@
+
+*.status
+*.log
+*.substvars
+
+COPYING
+INSTALL
+build-stamp
+config
+config.guess
+config.sub
+configure
+Makefile
+Makefile.in
+debian/files
+debian/vyos-cloudinit
+aclocal.m4

@@ -1,0 +1,4 @@
+priority: 400
+help: Cloud init
+create: sudo /usr/sbin/update-rc.d vyos-cloudinit defaults
+delete: sudo /usr/sbin/update-rc.d -f vyos-cloudinit remove

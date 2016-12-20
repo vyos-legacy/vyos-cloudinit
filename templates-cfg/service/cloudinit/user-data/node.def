@@ -1,0 +1,6 @@
+type: txt
+help: User Data URL
+syntax:expression: pattern $VAR(@) "^[^!]+$" ; "user-data URL must not be null and must not contain '!'"
+create: sudo sh -c "echo USER_DATA=$VAR(@) >> /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+update: sudo sh -c "sed -i '/^USER_DATA=/c/USER_DATA=$VAR(@)/' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
+delete: sudo sh -c "sed -i '/USER_DATA=/d' /opt/vyatta/etc/vyos-cloudinit/vyos-cloudinit.conf"
