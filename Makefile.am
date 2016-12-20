@@ -11,6 +11,7 @@ sbin_SCRIPTS += scripts/vyos-cloudinit
 sysconf_DATA =
 sysconf_DATA += sysconf/vyos-cloudinit/vyos-cloudinit.conf
 sysconf_DATA += sysconf/vyos-cloudinit/ec2.conf
+sysconf_DATA += sysconf/vyos-cloudinit/openstack.conf
 
 cpiop = find  . ! -regex '\(.*~\|.*\.bak\|.*\.swp\|.*\#.*\#\)' -print0 | \
   cpio -0pd

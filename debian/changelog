@@ -1,3 +1,9 @@
+vyos-cloudinit (0.2.0) unstable; urgency=low
+
+  * Initial support for OpenStack .
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Tue, 20 Dec 2016 14:45:54 +0900
+
 vyos-cloudinit (0.1.0) unstable; urgency=low
 
   * Add command templates.
