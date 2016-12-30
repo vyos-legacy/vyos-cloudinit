@@ -1,3 +1,9 @@
+vyos-cloudinit (0.3.0) unstable; urgency=low
+
+  * Separate ssh key script from cloudinit script
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Fri, 30 Dec 2016 13:11:05 +0900
+
 vyos-cloudinit (0.2.1) unstable; urgency=low
 
   * Remove command option from scripts/vyos-cloudinit

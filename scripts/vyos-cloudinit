@@ -4,8 +4,6 @@
 source $vyatta_env
 
 ENVIRONMENT=""
-SSH_KEY=""
-SSH_USER="vyos"
 USER_DATA=""
 
 CONF_DIR="${vyatta_sysconfdir}/vyos-cloudinit"
@@ -23,48 +21,22 @@ fi
 # override with user specified parameters
 . ${CONF_DIR}/vyos-cloudinit.conf
 
-if [[ -z "${SSH_KEY}" && -z "${USER_DATA}" ]]; then
-  echo "both ssh-key and user-data are not specified"
+if [[ -z "${USER_DATA}" ]]; then
+  echo "user-data is not specified"
   exit 0
 fi
 
-LOAD_KEY="${vyatta_sbindir}/vyatta-load-user-key.pl"
 LOAD_CONFIG="${vyatta_sbindir}/vyatta-load-config.pl"
 
 _exit=exit
 source ${vyatta_sysconfdir}/functions/script-template
 
-function load_key() {
-  echo "loading ssh key..."
-  ${LOAD_KEY} ${SSH_USER} ${SSH_KEY}
-}
-
-ssh_key_code=0
-if [[ -n "${SSH_KEY}" && "${SSH_KEY}" == "http"* ]]; then
-  /usr/bin/curl -m 3 -sf "${SSH_KEY}"
-  if [ $? -ne 0 ]; then
-    echo "could not retrieve ssh key from ${SSH_KEY}"
-    ssh_key_code=1
-  else
-    load_key
-    ssh_key_code=$?
-  fi
-elif [[ -n "${SSH_KEY}" ]]; then
-  load_key
-  ssh_key_code=$?
-fi
-
-if [[ -z "${USER_DATA}" ]]; then
-  $_exit ${ssh_key_code}
-fi
-
-user_data_code=0
 if [[ "${USER_DATA}" == "http"* ]]; then
   tmpdata=$(mktemp /tmp/XXXXXX-user-data)
   /usr/bin/curl -m 3 -sf "${USER_DATA}" -o ${tmpdata}
-  if [ $? -ne 0 ]; then
+  if [[ $? != 0 ]]; then
     echo "could not retrieve user-data from ${USER_DATA}"
-    user_data_code=1
+    $_exit 1
   fi
   USER_DATA="${tmpdata}"
 fi
@@ -79,29 +51,23 @@ if [[ "${header}" == "#vyos-config" ]]; then
   echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpconf} --merge > ${output}
   result=$(cat ${output} | tail -n +5 | head -n -1)
   grep -q fail ${output}
-  user_data_code=$?
-  if [ ${user_data_code} -eq 0 ]; then
+  if [[ $? == 0 ]]; then
     echo "merge failed"
     echo "${result}"
-    user_data_code=1
+    $_exit 1
   else
     commit
     save
-    user_data_code=0
   fi
 elif [[ "${header}" == "#!/bin/vbash" ]]; then
   echo "running user script..."
   chmod +x ${USER_DATA}
   result=$(${USER_DATA})
-  user_data_code=$?
-  if [[ ${user_data_code} -ne 0 ]]; then
+  if [[ $? != 0 ]]; then
     echo "user script failed"
     echo "${result}"
+    $_exit 1
   fi
 fi
 
-if [[ ${user_data_code} -eq 0 ]]; then
-  rm -f ${tmpdata} ${tmpconf} ${output}
-fi
-
-$_exit $code
+rm -f ${tmpdata} ${tmpconf} ${output}

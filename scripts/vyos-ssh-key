@@ -1,0 +1,52 @@
+#!/bin/vbash
+
+: ${vyatta_env:=/etc/default/vyatta}
+source $vyatta_env
+
+ENVIRONMENT=""
+SSH_KEY=""
+SSH_USER="vyos"
+
+CONF_DIR="${vyatta_sysconfdir}/vyos-cloudinit"
+. ${CONF_DIR}/vyos-cloudinit.conf
+
+if [ -n "${ENVIRONMENT}" ]; then
+  env_conf=${CONF_DIR}/${ENVIRONMENT}.conf
+  if [ -f ${env_conf} ]; then
+    . ${env_conf}
+  else
+    echo "${ENVIRONMENT} is not supported"
+  fi
+fi
+
+# override with user specified parameters
+. ${CONF_DIR}/vyos-cloudinit.conf
+
+if [[ -z "${SSH_KEY}" ]]; then
+  echo "ssh-key not specified"
+  exit 0
+fi
+
+LOAD_KEY="${vyatta_sbindir}/vyatta-load-user-key.pl"
+
+_exit=exit
+source ${vyatta_sysconfdir}/functions/script-template
+
+function load_key() {
+  echo "loading ssh key..."
+  ${LOAD_KEY} ${SSH_USER} ${SSH_KEY}
+}
+
+if [[ -n "${SSH_KEY}" && "${SSH_KEY}" == "http"* ]]; then
+  /usr/bin/curl -m 3 -sf "${SSH_KEY}"
+  if [ $? -ne 0 ]; then
+    echo "could not retrieve ssh key from ${SSH_KEY}"
+    $_exit 1
+  else
+    load_key
+    $_exit $?
+  fi
+elif [[ -n "${SSH_KEY}" ]]; then
+  load_key
+  $_exit $?
+fi

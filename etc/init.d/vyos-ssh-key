@@ -1,0 +1,19 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          vyos-ssh-key
+# Required-Start:    vyos-cloudinit
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Load user SSH key.
+# Description:       Load user SSH key.
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+: ${vyatta_env:=/etc/default/vyatta}
+source $vyatta_env
+
+log_action_begin_msg "Starting vyos-ssh-key"
+${vyatta_sbindir}/vyos-ssh-key
+log_action_end_msg $?
