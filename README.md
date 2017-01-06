@@ -31,6 +31,8 @@ system {
 }
 ```
 
+It will be merged into existing config.
+
 ### Executing a Script
 
 vyos-cloudinit supports executing user-data as a script instead of parsing it as a VyOS config document.
