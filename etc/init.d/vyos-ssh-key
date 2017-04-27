@@ -15,5 +15,5 @@
 source $vyatta_env
 
 log_action_begin_msg "Starting vyos-ssh-key"
-${vyatta_sbindir}/vyos-ssh-key
+sg ${VYATTA_CFG_GROUP_NAME} ${vyatta_sbindir}/vyos-ssh-key
 log_action_end_msg $?
