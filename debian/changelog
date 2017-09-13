@@ -1,3 +1,9 @@
+vyos-cloudinit (0.3.2) unstable; urgency=low
+
+  * Update copyright 
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Wed, 13 Sep 2017 12:57:22 +0900
+
 vyos-cloudinit (0.3.1) unstable; urgency=low
 
   [Anders Svanqvist]

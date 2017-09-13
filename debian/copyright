@@ -2,15 +2,15 @@ This package was debianized by Yuya Kusakabe <yuya.kusakabe@gmail.com> on
 Thu, 15 Dec 2016.
 
 It's original content from the GIT repository 
-   <https://github.com/higebu/vyos-cloudinit>
+   <https://github.com/vyos/vyos-cloudinit>
 
 Upstream Author: 
 
-    Yuya Kusakabe <yuya.kusakabe@gmail.com>
+    <maintainers@vyos.net>
 
 Copyright: 
 
-    Copyright (C) 2016 VyOS Development Group, Inc.
+    Copyright (C) 2017 VyOS maintainers and contributors
     All Rights Reserved.
 
 License:
