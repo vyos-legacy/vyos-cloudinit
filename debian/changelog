@@ -1,3 +1,10 @@
+vyos-cloudinit (0.3.2) unstable; urgency=low
+
+  [ Byron McCollum ]
+  * Fix default user-data URL in openstack.conf
+
+ -- Yuya Kusakabe <yuya.kusakabe@gmail.com>  Wed, 04 Oct 2017 08:47:36 +0900
+
 vyos-cloudinit (0.3.1) unstable; urgency=low
 
   [Anders Svanqvist]
