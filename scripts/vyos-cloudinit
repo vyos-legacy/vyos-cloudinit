@@ -11,7 +11,7 @@ CONF_DIR="${vyatta_sysconfdir}/vyos-cloudinit"
 
 if [ -n "${ENVIRONMENT}" ]; then
   env_conf=${CONF_DIR}/${ENVIRONMENT}.conf
-  if [ -f ${env_conf} ]; then
+  if [ -f "${env_conf}" ]; then
     . ${env_conf}
   else
     echo "${ENVIRONMENT} is not supported"
@@ -31,6 +31,62 @@ LOAD_CONFIG="${vyatta_sbindir}/vyatta-load-config.pl"
 _exit=exit
 source ${vyatta_sysconfdir}/functions/script-template
 
+function execute_config_script {
+  local TEMP_FILE=$1
+  chmod +x "${TEMP_FILE}"
+  result=$(${TEMP_FILE})
+  if [[ "$?" == 0 ]]; then
+    echo "USER Config done"
+  else
+    echo "Configuration rendering failed  ${result}"
+    $_exit 1
+  fi
+}
+
+function merge_config_script {
+  tmpconf=$(mktemp /tmp/XXXXXX-config)
+  output=$(mktemp /tmp/XXXXXX-output)
+  tail -n +2 "${1}" > "${tmpconf}"
+  echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpconf} --merge > "${output}"
+  result=$(cat "${output}" | tail -n +5 | head -n -1)
+  grep -q fail "${output}"
+  if [[ $? == 0 ]]; then
+    echo "merge failed"
+    echo "${result}"
+    $_exit 1
+  else
+    commit
+    save
+    echo "USER Config done"
+  fi
+  rm -f "${tmpconf}" "${output}"
+}
+
+if [[ "${USER_DATA}" == "config_drive:"* ]]; then
+    if [[ ! -d "/mnt/config" ]]; then
+      mkdir -p "/mnt/config"
+    fi
+    IFS=':' read -a locs <<< "${USER_DATA}"
+    if [[ "${#locs[@]}" -ge 2 ]]; then
+      echo "${locs[1]}"
+      mount "${locs[1]}" /mnt/config
+      TEMP_FILE=$(mktemp  /tmp/XXXXXX-config)
+      cp /mnt/config/openstack/latest/user_data "${TEMP_FILE}"
+      header=$(head -n1 "${TEMP_FILE}")
+      echo "$header"
+      if [[ "${header}" == "#!/bin/vbash" ]]; then
+        execute_config_script "${TEMP_FILE}"
+      elif [[ "${header}" == "#vyos-config" ]]; then
+        merge_config_script "${TEMP_FILE}"
+      fi
+      umount /mnt/config
+      rm -f "${TEMP_FILE}"
+    else
+      echo "WARNING: USER CONFIG not rendered. Invalid settings."
+    fi
+    $_exit 0
+fi
+
 if [[ "${USER_DATA}" == "http"* ]]; then
   tmpdata=$(mktemp /tmp/XXXXXX-user-data)
   /usr/bin/curl -m 3 -sf "${USER_DATA}" -o ${tmpdata}
@@ -45,29 +101,10 @@ header=$(head -n1 ${USER_DATA})
 
 if [[ "${header}" == "#vyos-config" ]]; then
   echo "merging VyOS config..."
-  tmpconf=$(mktemp /tmp/XXXXXX-config)
-  output=$(mktemp /tmp/XXXXXX-output)
-  tail -n +2 ${USER_DATA} > ${tmpconf}
-  echo Y | python -c 'import pty, sys; pty.spawn(sys.argv[1:])' ${LOAD_CONFIG} ${tmpconf} --merge > ${output}
-  result=$(cat ${output} | tail -n +5 | head -n -1)
-  grep -q fail ${output}
-  if [[ $? == 0 ]]; then
-    echo "merge failed"
-    echo "${result}"
-    $_exit 1
-  else
-    commit
-    save
-  fi
+  merge_config_script "${USER_DATA}"
 elif [[ "${header}" == "#!/bin/vbash" ]]; then
   echo "running user script..."
-  chmod +x ${USER_DATA}
-  result=$(${USER_DATA})
-  if [[ $? != 0 ]]; then
-    echo "user script failed"
-    echo "${result}"
-    $_exit 1
-  fi
+  execute_config_script "${USER_DATA}"
 fi
 
-rm -f ${tmpdata} ${tmpconf} ${output}
+rm -f "${tmpdata}"
