@@ -38,7 +38,7 @@ function load_key() {
 }
 
 if [[ -n "${SSH_KEY}" && "${SSH_KEY}" == "http"* ]]; then
-  /usr/bin/curl -m 3 -sf "${SSH_KEY}"
+  /usr/bin/curl --retry 10 --retry-delay 3 -m 3 -sf "${SSH_KEY}"
   if [ $? -ne 0 ]; then
     echo "could not retrieve ssh key from ${SSH_KEY}"
     $_exit 1
