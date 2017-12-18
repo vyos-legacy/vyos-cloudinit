@@ -89,7 +89,7 @@ fi
 
 if [[ "${USER_DATA}" == "http"* ]]; then
   tmpdata=$(mktemp /tmp/XXXXXX-user-data)
-  /usr/bin/curl -m 3 -sf "${USER_DATA}" -o ${tmpdata}
+  /usr/bin/curl --retry 10 --retry-delay 3 -m 3 -sf "${USER_DATA}" -o ${tmpdata}
   if [[ $? != 0 ]]; then
     echo "could not retrieve user-data from ${USER_DATA}"
     $_exit 1
